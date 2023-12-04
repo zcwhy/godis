@@ -3,7 +3,7 @@ package main
 import (
 	"godis/tcp"
 
-	RedisServer "godis/redis/server"
+	"godis/redis/net"
 )
 
 var banner = `
@@ -19,7 +19,7 @@ func main() {
 
 	err := tcp.ListenAndServeWithSignal(&tcp.Config{
 		Address: "0.0.0.0:6639",
-	}, RedisServer.MakeServer())
+	}, net.MakeHandler())
 
 	if err != nil {
 	}

@@ -98,6 +98,18 @@ func (dict *ConcurrentDict) Get(key string) (val interface{}, exists bool) {
 	return
 }
 
+// GetWithLock 调用方持有锁的时候调用该方法
+func (dict *ConcurrentDict) GetWithLock(key string) (val interface{}, exists bool) {
+	if dict == nil {
+		panic("dict is nil")
+	}
+	hashCode := fnv32(key)
+	index := dict.spread(hashCode)
+	s := dict.getShard(index)
+	val, exists = s.m[key]
+	return
+}
+
 func (dict *ConcurrentDict) Len() int {
 	if dict == nil {
 		panic("dict is nil")
@@ -122,6 +134,44 @@ func (dict *ConcurrentDict) Put(key string, val interface{}) (result int) {
 	dict.addCount()
 	s.m[key] = val
 	return 1
+}
+
+func (dict *ConcurrentDict) Remove(key string) (val interface{}, result int) {
+	if dict == nil {
+		panic("dict is nil")
+	}
+	hashCode := fnv32(key)
+	index := dict.spread(hashCode)
+	s := dict.getShard(index)
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if val, ok := s.m[key]; ok {
+		delete(s.m, key)
+		dict.decreaseCount()
+		return val, 1
+	}
+	return nil, 0
+}
+
+func (dict *ConcurrentDict) RemoveWithLock(key string) (val interface{}, result int) {
+	if dict == nil {
+		panic("dict is nil")
+	}
+	hashCode := fnv32(key)
+	index := dict.spread(hashCode)
+	s := dict.getShard(index)
+
+	if val, ok := s.m[key]; ok {
+		delete(s.m, key)
+		dict.decreaseCount()
+		return val, 1
+	}
+	return val, 0
+}
+
+func (dict *ConcurrentDict) decreaseCount() int32 {
+	return atomic.AddInt32(&dict.count, -1)
 }
 
 func (dict *ConcurrentDict) addCount() int32 {

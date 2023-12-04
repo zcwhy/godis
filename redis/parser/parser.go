@@ -13,6 +13,7 @@ type Payload struct {
 	Err  error
 }
 
+// ParseStream 从conn中解析RESP
 func ParseStream(reader io.Reader) <-chan *Payload {
 	ch := make(chan *Payload)
 	go parse0(reader, ch)

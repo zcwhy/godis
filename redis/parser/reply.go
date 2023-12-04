@@ -27,6 +27,11 @@ func (r *StatusReply) ToBytes() []byte {
 	return []byte("+" + r.Status + CRLF)
 }
 
+type ErrorReply interface {
+	Error() string
+	ToBytes() []byte
+}
+
 type StandardErrReply struct {
 	Status string
 }
@@ -39,6 +44,10 @@ func MakeErrReply(status string) *StandardErrReply {
 
 func (r *StandardErrReply) ToBytes() []byte {
 	return []byte("-" + r.Status + CRLF)
+}
+
+func (r *StandardErrReply) Error() string {
+	return r.Status
 }
 
 type IntReply struct {
@@ -102,6 +111,7 @@ func MakeEmptyMultiBulkReply() *EmptyMultiBulkReply {
 	return &EmptyMultiBulkReply{}
 }
 
+// SET A 1 => ["SET", "A", "1"]
 type MultiBulkReply struct {
 	Args [][]byte
 }
